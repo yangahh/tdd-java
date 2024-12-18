@@ -10,7 +10,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-public class PointHistoryTableTest {
+class PointHistoryTableTest {
     private final PointHistoryTable pointHistoryTable = new PointHistoryTable();
 
     @DisplayName("정상적으로 포인트 내역을 추가한다.")

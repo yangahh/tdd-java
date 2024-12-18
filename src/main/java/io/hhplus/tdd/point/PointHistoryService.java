@@ -12,12 +12,15 @@ import java.util.List;
 public class PointHistoryService {
     private final PointHistoryTable pointHistoryTable;
 
-    public List<PointHistory> getUserPointHistories(long userId) {
-        List<PointHistory> pointHistories = pointHistoryTable.selectAllByUserId(userId);
-        return sortPointHistoriesByUpdatedAt(pointHistories);
+    public PointHistory recordUserPointHistory(long userId, long amount, TransactionType transactionType) {
+        return pointHistoryTable.insert(userId, amount, transactionType, System.currentTimeMillis());
     }
 
-    private List<PointHistory> sortPointHistoriesByUpdatedAt(List<PointHistory> pointHistories) {
+    public List<PointHistory> getUserPointHistories(long userId) {
+        return sortByUpdatedAt(pointHistoryTable.selectAllByUserId(userId));
+    }
+
+    private List<PointHistory> sortByUpdatedAt(List<PointHistory> pointHistories) {
         return pointHistories.stream()
                 .sorted(Comparator.comparing(PointHistory::updateMillis).reversed())
                 .toList();

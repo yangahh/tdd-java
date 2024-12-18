@@ -11,10 +11,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
-public class PointHistoryServiceTest {
+class PointHistoryServiceTest {
     @InjectMocks
     private PointHistoryService sut;
 
@@ -52,5 +54,25 @@ public class PointHistoryServiceTest {
         assertThat(result.get(0)).isEqualTo(pointHistory3);
         assertThat(result.get(1)).isEqualTo(pointHistory2);
         assertThat(result.get(2)).isEqualTo(pointHistory1);
+    }
+
+    @DisplayName("포인트 내역 저장 검증: 포인트 내역이 정상적으로 저장된다.")
+    @Test
+    void shouldRecordPointHistorySuccessfully() {
+        // given
+        long userId = 1L;
+        long amount = 1000L;
+        TransactionType transactionType = TransactionType.CHARGE;
+        long updateMillis = System.currentTimeMillis();
+
+        PointHistory pointHistory = new PointHistory(1L, userId, amount, transactionType, updateMillis);
+        given(pointHistoryTable.insert(anyLong(), anyLong(), any(TransactionType.class), anyLong())).willReturn(pointHistory);
+
+        // when
+        PointHistory result = sut.recordUserPointHistory(userId, amount, transactionType);
+
+        // then
+        then(pointHistoryTable).should().insert(eq(userId), eq(amount), eq(transactionType), anyLong());
+        assertThat(result).isEqualTo(pointHistory);
     }
 }

@@ -71,7 +71,6 @@ class PointServiceTest {
 
         // then
         then(userPointTable).should().insertOrUpdate(eq(userId), eq(originPoint + chargeAmount));
-        then(pointHistoryTable).should().insert(eq(userId), eq(chargeAmount), eq(TransactionType.CHARGE), anyLong());
         assertThat(result.point()).isEqualTo(1100L);
 
     }
@@ -108,7 +107,6 @@ class PointServiceTest {
 
         // then
         then(userPointTable).should().insertOrUpdate(eq(userId), eq(originPoint - useAmount));
-        then(pointHistoryTable).should().insert(eq(userId), eq(useAmount), eq(TransactionType.USE), anyLong());
         assertThat(result.point()).isEqualTo(originPoint - useAmount);
 
     }
@@ -121,7 +119,7 @@ class PointServiceTest {
         given(userPointTable.selectById(userId)).willReturn(UserPoint.empty(userId));
 
         // when
-        UserPoint result = sut.getPoint(userId);
+        UserPoint result = sut.getUserPoint(userId);
 
         // then
         assertThat(result.point()).isZero();
@@ -129,13 +127,13 @@ class PointServiceTest {
 
     @DisplayName("포인트 조회 검증: 정상적으로 요청하는 경우 조회 성공")
     @Test
-    void shouldGetPointBalanceSuccessfully() {
+    void shouldGetUserPointSuccessfully() {
         // given
         UserPoint existingUserPoint = new UserPoint(1L, 1000L,  System.currentTimeMillis());
         given(userPointTable.selectById(1L)).willReturn(existingUserPoint);
 
         // when
-        UserPoint result = sut.getPoint(1L);
+        UserPoint result = sut.getUserPoint(1L);
 
         // then
         assertThat(result.point()).isEqualTo(1000L);

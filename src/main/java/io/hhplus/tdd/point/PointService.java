@@ -1,6 +1,5 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,17 +8,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PointService {
     private final UserPointTable userPointTable;
-    private final PointHistoryTable pointHistoryTable;
 
     public UserPoint chargePoint(long userId, long amount) {
         validateChargeAmount(amount);
 
         UserPoint afterPoint = getUserPoint(userId).addPoint(amount);
-
-        updateUserPoint(userId, afterPoint.point());
-        recordPointHistory(userId, amount, TransactionType.CHARGE);
-
-        return afterPoint;
+        return updateUserPoint(userId, afterPoint.point());
     }
 
     private static void validateChargeAmount(long amount) {  // 충전 과정에서만 유효하기 때문에 PointService의 책임
@@ -30,26 +24,18 @@ public class PointService {
 
     public UserPoint usePoint(long userId, long amount) {
         UserPoint afterPoint = getUserPoint(userId).minusPoint(amount);
-
-        updateUserPoint(userId, afterPoint.point());
-        recordPointHistory(userId, amount, TransactionType.USE);
-
-        return afterPoint;
+        return updateUserPoint(userId, afterPoint.point());
     }
 
-    public UserPoint getPoint(long userId) {
-        return getUserPoint(userId);
+    public UserPoint getUserPoint(long userId) {
+        return getPointByUser(userId);
     }
 
-    private UserPoint getUserPoint(long userId) {
+    private UserPoint getPointByUser(long userId) {
         return userPointTable.selectById(userId);
     }
 
-    private void updateUserPoint(long userId, long amount ) {
-        userPointTable.insertOrUpdate(userId, amount);
-    }
-
-    private void recordPointHistory(long userId, long amount, TransactionType transactionType) {
-        pointHistoryTable.insert(userId, amount, transactionType, System.currentTimeMillis());
+    private UserPoint updateUserPoint(long userId, long amount ) {
+        return userPointTable.insertOrUpdate(userId, amount);
     }
 }

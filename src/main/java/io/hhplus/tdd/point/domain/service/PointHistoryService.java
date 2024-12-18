@@ -1,6 +1,8 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.domain.service;
 
 import io.hhplus.tdd.database.PointHistoryTable;
+import io.hhplus.tdd.point.domain.vo.TransactionType;
+import io.hhplus.tdd.point.domain.entity.PointHistory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

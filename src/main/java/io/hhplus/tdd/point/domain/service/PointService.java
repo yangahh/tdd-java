@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+/*
+ * 포인트 관련 비즈니스 로직을 처리하는 서비스 클래스
+ * - ReentrantLock을 사용하여 동시성 문제 해결
+ * - ConcurrentHashMap을 사용하여 사용자별 Lock 객체 관리
+ */
 @Service
 @RequiredArgsConstructor
 public class PointService {

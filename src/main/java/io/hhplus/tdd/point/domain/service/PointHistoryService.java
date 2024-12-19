@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 
+/*
+ * 포인트 내역 관련 비즈니스 로직을 처리하는 서비스 클래스
+ */
 @Service
 @RequiredArgsConstructor
 public class PointHistoryService {

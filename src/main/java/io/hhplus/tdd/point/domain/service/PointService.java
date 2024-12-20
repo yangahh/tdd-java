@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequiredArgsConstructor
 public class PointService {
     private final UserPointTable userPointTable;
-    private final ConcurrentHashMap<Long, ReentrantLock> userLocks = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, ReentrantLock> userLocks = new ConcurrentHashMap<>();
 
     public UserPoint chargePoint(long userId, long amount) {
         ReentrantLock lock = userLocks.computeIfAbsent(userId, key -> new ReentrantLock());

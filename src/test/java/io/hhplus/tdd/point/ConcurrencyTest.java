@@ -3,6 +3,7 @@ package io.hhplus.tdd.point;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.point.domain.entity.UserPoint;
 import io.hhplus.tdd.point.domain.service.PointService;
+import io.hhplus.tdd.utils.ReentrantLockManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,10 @@ class ConcurrencyTest {
     @Autowired
     private UserPointTable userPointTable;
 
-    @DisplayName("동일한 사용자가 동시에 포인트 충전 요청을 여러번 하는 경우 한 번에 하나의 요청만 처리되어야 한다.")
+    @Autowired
+    private ReentrantLockManager lockManager;
+
+    @DisplayName("동일한 사용자가 동시에 포인트 충전 요청을 여러번 하는 경우 한 번에 하나의 요청만 순차적으로 처리되어야 한다.")
     @Test
     void chargePointConcurrentlyWithSameUser() throws InterruptedException {
         // given
@@ -53,7 +57,7 @@ class ConcurrencyTest {
         executorService.shutdown();
     }
 
-    @DisplayName("동일한 사용자가 동시에 포인트 사용 요청을 여러번 하는 경우 한 번에 하나의 요청만 처리되어야 한다.")
+    @DisplayName("동일한 사용자가 동시에 포인트 사용 요청을 여러번 하는 경우 한 번에 하나의 요청만 순차적으로 처리되어야 한다.")
     @Test
     void usePointConcurrentlyWithSameUser() throws InterruptedException {
         // given
@@ -83,43 +87,41 @@ class ConcurrencyTest {
         executorService.shutdown();
     }
 
-    @DisplayName("동일한 사용자가 동시에 포인트 충전, 사용, 조회를 하는 경우 요청은 한 번에 하나씩 처리되어야 한다.")
+    @DisplayName("동일한 사용자가 동시에 포인트 충전, 사용, 조회를 하는 경우 요청은 요청이 들어온 순서대로 처리되어야 한다.")
     @Test
     void concurrentlyChargeUseGetPointRequestwithSameUser() throws InterruptedException, ExecutionException {
         // given
         long userId = 3333L;
-        int requestCount = 100; // 동시에 들어오는 요청 수
-        long initialPoint = 1000L;
+        int requestCount = 10; // 동시에 들어오는 요청 수
+        long initialPoint = 500L;
         userPointTable.insertOrUpdate(userId, initialPoint);
 
-        Callable<Void> chargePointTask = () -> {
-            pointService.chargePoint(userId, 200L);
-            return null;
-        };
-        Callable<Void> usePointTask = () -> {
-            pointService.usePoint(userId, 100L);
-            return null;
-        };
-        Callable<Void> getPointTask = () -> {
-            pointService.getUserPoint(userId);
-            return null;
-        };
-
-        // when
         ExecutorService executorService = Executors.newFixedThreadPool(requestCount);
-        // 3개의 작업을 동시에 실행
-        Future<Void> chargePointFuture = executorService.submit(chargePointTask);
-        Future<Void> usePointFuture = executorService.submit(usePointTask);
-        Future<Void> getPointFuture = executorService.submit(getPointTask);
-        // 작업이 완료될 때까지 대기
-        chargePointFuture.get();
-        usePointFuture.get();
-        getPointFuture.get();
+        CountDownLatch countDownLatch = new CountDownLatch(requestCount);
+        for (int i = 0; i < requestCount / 2; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.chargePoint(userId, 100L);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+
+            executorService.submit(() -> {
+                try {
+                    pointService.usePoint(userId, 100L);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+
+        countDownLatch.await();  // 모든 스레드가 종료될 때까지 대기
 
         // then
         UserPoint finalUserPoint = pointService.getUserPoint(userId);
 
-        assertThat(finalUserPoint.point()).isEqualTo(initialPoint + 200L - 100L);
+        assertThat(finalUserPoint.point()).isEqualTo(initialPoint);
         executorService.shutdown();
     }
 
